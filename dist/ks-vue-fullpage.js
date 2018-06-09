@@ -1,6 +1,6 @@
 /*!
  * ks-vue-fullpage v1.2.8
- * (c) 2017 pirony
+ * (c) 2018 pirony
  * Released under the MIT License.
  */
 
@@ -690,7 +690,7 @@ var Component = __webpack_require__(0)(
   /* moduleIdentifier (server only) */
   null
 )
-Component.options.__file = "C:\\Users\\romai\\ks-node\\vue-plugins\\node_modules\\ks-vue-fullpage\\src\\components\\ksvuefp-section.vue"
+Component.options.__file = "C:\\html\\_luka\\okomito\\tests\\ks-vue-fullpage\\src\\components\\ksvuefp-section.vue"
 if (Component.esModule && Object.keys(Component.esModule).some(function (key) {return key !== "default" && key.substr(0, 2) !== "__"})) {console.error("named exports are not supported in *.vue files.")}
 if (Component.options.functional) {console.error("[vue-loader] ksvuefp-section.vue: functional components are not supported with templates, they should use render functions.")}
 
@@ -734,7 +734,7 @@ var Component = __webpack_require__(0)(
   /* moduleIdentifier (server only) */
   null
 )
-Component.options.__file = "C:\\Users\\romai\\ks-node\\vue-plugins\\node_modules\\ks-vue-fullpage\\src\\components\\ksvuefp.vue"
+Component.options.__file = "C:\\html\\_luka\\okomito\\tests\\ks-vue-fullpage\\src\\components\\ksvuefp.vue"
 if (Component.esModule && Object.keys(Component.esModule).some(function (key) {return key !== "default" && key.substr(0, 2) !== "__"})) {console.error("named exports are not supported in *.vue files.")}
 if (Component.options.functional) {console.error("[vue-loader] ksvuefp.vue: functional components are not supported with templates, they should use render functions.")}
 
@@ -908,6 +908,18 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; //
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+
 var _utils = __webpack_require__(1);
 
 var _utils2 = _interopRequireDefault(_utils);
@@ -1053,6 +1065,21 @@ exports.default = {
 
       if (nextIndex === 'none') return;
 
+      var beforeChange = vm.$ksvuefp.options.beforeChange;
+      if (beforeChange && typeof beforeChange === 'function') {
+        var beforeChangeReturn = beforeChange.call(vm, nextIndex, OldIndex, Direction);
+        if ((typeof beforeChangeReturn === 'undefined' ? 'undefined' : _typeof(beforeChangeReturn)) === 'object') {
+          vm.$ksvuefp.slidingActive = true;
+          setTimeout(function () {
+            vm.$ksvuefp.$emit('ksvuefp-change-done');
+          }, beforeChangeReturn.delay ? beforeChangeReturn.delay + vm.$ksvuefp.options.animDelay + 100 : vm.$ksvuefp.options.animDelay + 1100);
+
+          return;
+        } else if (beforeChangeReturn === false) {
+          return;
+        }
+      }
+
       this.$nextTick(function () {
         // we wait for our computed datas to be ready
         /**
@@ -1103,17 +1130,7 @@ exports.default = {
     this.$off();
     this.$ksvuefp.$emit('ksvuefp-destroy');
   }
-}; //
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
+};
 
 /***/ }),
 /* 10 */
@@ -1381,7 +1398,7 @@ return EvEmitter;
 /***/ (function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
- * imagesLoaded v4.1.3
+ * imagesLoaded v4.1.4
  * JavaScript is all like "You images are done yet or what?"
  * MIT License
  */
@@ -1434,22 +1451,23 @@ function extend( a, b ) {
   return a;
 }
 
+var arraySlice = Array.prototype.slice;
+
 // turn element or nodeList into an array
 function makeArray( obj ) {
-  var ary = [];
   if ( Array.isArray( obj ) ) {
     // use object if already an array
-    ary = obj;
-  } else if ( typeof obj.length == 'number' ) {
-    // convert nodeList to array
-    for ( var i=0; i < obj.length; i++ ) {
-      ary.push( obj[i] );
-    }
-  } else {
-    // array of single index
-    ary.push( obj );
+    return obj;
   }
-  return ary;
+
+  var isArrayLike = typeof obj == 'object' && typeof obj.length == 'number';
+  if ( isArrayLike ) {
+    // convert nodeList to array
+    return arraySlice.call( obj );
+  }
+
+  // array of single index
+  return [ obj ];
 }
 
 // -------------------------- imagesLoaded -------------------------- //
@@ -1465,13 +1483,19 @@ function ImagesLoaded( elem, options, onAlways ) {
     return new ImagesLoaded( elem, options, onAlways );
   }
   // use elem as selector string
+  var queryElem = elem;
   if ( typeof elem == 'string' ) {
-    elem = document.querySelectorAll( elem );
+    queryElem = document.querySelectorAll( elem );
+  }
+  // bail if bad element
+  if ( !queryElem ) {
+    console.error( 'Bad element for imagesLoaded ' + ( queryElem || elem ) );
+    return;
   }
 
-  this.elements = makeArray( elem );
+  this.elements = makeArray( queryElem );
   this.options = extend( {}, this.options );
-
+  // shift arguments if no options set
   if ( typeof options == 'function' ) {
     onAlways = options;
   } else {
@@ -1490,9 +1514,7 @@ function ImagesLoaded( elem, options, onAlways ) {
   }
 
   // HACK check async to allow time to bind listeners
-  setTimeout( function() {
-    this.check();
-  }.bind( this ));
+  setTimeout( this.check.bind( this ) );
 }
 
 ImagesLoaded.prototype = Object.create( EvEmitter.prototype );
@@ -1660,7 +1682,9 @@ LoadingImage.prototype.check = function() {
 };
 
 LoadingImage.prototype.getIsImageComplete = function() {
-  return this.img.complete && this.img.naturalWidth !== undefined;
+  // check for non-zero, non-undefined naturalWidth
+  // fixes Safari+InfiniteScroll+Masonry bug infinite-scroll#671
+  return this.img.complete && this.img.naturalWidth;
 };
 
 LoadingImage.prototype.confirm = function( isLoaded, message ) {
@@ -1774,7 +1798,7 @@ var Component = __webpack_require__(0)(
   /* moduleIdentifier (server only) */
   null
 )
-Component.options.__file = "C:\\Users\\romai\\ks-node\\vue-plugins\\node_modules\\ks-vue-fullpage\\src\\components\\ksvuefp-nav.vue"
+Component.options.__file = "C:\\html\\_luka\\okomito\\tests\\ks-vue-fullpage\\src\\components\\ksvuefp-nav.vue"
 if (Component.esModule && Object.keys(Component.esModule).some(function (key) {return key !== "default" && key.substr(0, 2) !== "__"})) {console.error("named exports are not supported in *.vue files.")}
 if (Component.options.functional) {console.error("[vue-loader] ksvuefp-nav.vue: functional components are not supported with templates, they should use render functions.")}
 
@@ -1818,7 +1842,7 @@ var Component = __webpack_require__(0)(
   /* moduleIdentifier (server only) */
   null
 )
-Component.options.__file = "C:\\Users\\romai\\ks-node\\vue-plugins\\node_modules\\ks-vue-fullpage\\src\\components\\ksvuefp-preloader.vue"
+Component.options.__file = "C:\\html\\_luka\\okomito\\tests\\ks-vue-fullpage\\src\\components\\ksvuefp-preloader.vue"
 if (Component.esModule && Object.keys(Component.esModule).some(function (key) {return key !== "default" && key.substr(0, 2) !== "__"})) {console.error("named exports are not supported in *.vue files.")}
 if (Component.options.functional) {console.error("[vue-loader] ksvuefp-preloader.vue: functional components are not supported with templates, they should use render functions.")}
 

@@ -139,6 +139,22 @@ export default {
 
       if (nextIndex === 'none') return
 
+      var beforeChange = vm.$ksvuefp.options.beforeChange
+      if (beforeChange && typeof beforeChange === 'function') {
+        var beforeChangeReturn = beforeChange.call(vm, nextIndex, OldIndex, Direction)
+        if (typeof beforeChangeReturn === 'object') {
+          vm.$ksvuefp.slidingActive = true;
+          setTimeout(function () {
+            vm.$ksvuefp.$emit('ksvuefp-change-done');
+          }, beforeChangeReturn.delay ? beforeChangeReturn.delay + vm.$ksvuefp.options.animDelay + 100 : vm.$ksvuefp.options.animDelay + 1100);
+
+          return
+        } 
+        else if (beforeChangeReturn === false) {
+          return
+        }
+      }
+
       this.$nextTick(() => {  // we wait for our computed datas to be ready
         /**
          * Emit change event on bus vm
